@@ -1,6 +1,6 @@
 # 更新日志
 
-## v1.1.3-fixed.1 (2026-10-22)
+## v1.1.3-fixed.2 (2026-10-22)
 
 本分支基于上游 [yfishyon/doumcp](https://github.com/yfishyon/doumcp) v1.1.3（commit 0c84d18）。
 
