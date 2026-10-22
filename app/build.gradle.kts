@@ -36,6 +36,7 @@ android {
     }
 
     defaultConfig {
+        applicationId = "io.github.dx9527_a.doumcp" // 👈 添加这一行
         minSdk = 26
         targetSdk = 37
         versionCode = gitCommitCount
