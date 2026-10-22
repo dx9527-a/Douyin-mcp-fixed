@@ -28,8 +28,9 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: 安装 Android SDK
-        uses: android-actions/setup-android@v3
+      - name: 接受 Android SDK 许可证
+        # GitHub ubuntu runner 已预装 Android SDK（$ANDROID_HOME），缺的组件由 Gradle 自动下载
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - name: 构建 Release APK（arm64-v8a / armeabi-v7a）
         run: |
