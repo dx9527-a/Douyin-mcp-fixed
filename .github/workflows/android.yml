@@ -1,0 +1,66 @@
+name: Android CI
+
+# 触发条件：
+# 1. 推送 v 开头的 tag（如 v1.1.3-fixed.1）→ 构建并发布到 Releases
+# 2. 手动触发（Actions 页面 Run workflow）→ 仅构建，产物在 Artifacts
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          # versionCode 用 git 提交数，需要完整历史
+          fetch-depth: 0
+
+      - name: 安装 JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: 安装 Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 构建 Release APK（arm64-v8a / armeabi-v7a）
+        run: |
+          # 无签名配置时构建未签名包；有密钥则解密并签名
+          if [ -n "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+            cat > release-signing.properties <<EOF
+          storeFile=release.keystore
+          storePassword=${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.RELEASE_KEY_ALIAS }}
+          keyPassword=${{ secrets.RELEASE_KEY_PASSWORD }}
+          EOF
+          fi
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: 整理产物
+        run: |
+          mkdir -p apks
+          find app/build/outputs/apk -name '*.apk' -exec cp {} apks/ \;
+          ls -la apks/
+
+      - name: 上传构建产物（Artifacts，每次构建都有）
+        uses: actions/upload-artifact@v4
+        with:
+          name: apks
+          path: apks/*.apk
+
+      - name: 发布到 Releases（仅打 tag 时）
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: apks/*.apk
+          generate_release_notes: true
