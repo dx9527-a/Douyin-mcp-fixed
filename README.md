@@ -1,3 +1,38 @@
+# Douyin-mcp-fixed
+
+> 本仓库是 [yfishyon/doumcp](https://github.com/yfishyon/doumcp)（v1.1.3）的修复分支，项目原名「抖M / DouMCP」。修复内容见下方 [本分支修复了什么](#-本分支修复了什么) 与 [CHANGELOG.md](CHANGELOG.md)。
+
+## 🩹 本分支修复了什么
+
+### 1. 引用回复必崩（核心修复）
+
+- **症状**：`sendTextMessage` 只要带 `quoteMessageId` 就报错
+  `IllegalStateException: Required field not set: referenced_message_status`，引用回复完全不可用。
+- **根因**：模块用反射构造宿主的 `com.bytedance.im.core.proto.ReferenceInfo`（Wire 生成类），
+  只设置了 `referenced_message_id` / `hint` / `ref_message_type` 三个字段，
+  漏掉了 Wire 的 required 字段 `referenced_message_status`（类型是宿主的 `MessageStatus` 消息类，不是 Int），
+  `build()` 时直接抛异常。原注释声称「拷贝已有引用模板」，实际代码是从零构造 Builder，字段就这么丢了。
+- **修法**（`ImMsgBridge.kt:442` 起）：反射取 `referenced_message_status` setter，
+  按其真实参数类型（宿主 MessageStatus）经无参 Builder + `build()` 构造默认实例传入；
+  Builder 不可用时兜底取该类 static final 自引用字段。已在真机验证：引用消息可正常发出并被对端看到引用块。
+- 附带说明：`revokeMessage` 撤回在部分场景仍返回「IM 返回失败」（上游原有问题，本分支未改动）。
+
+### 2. sendTextMessage 缺少参数 schema
+
+- **症状**：该工具的 inputSchema 是空的 `{"type":"object"}`，参数只在中文描述里，
+  部分 MCP 客户端会把 `quoteMessageId` 压成字符串甚至丢参数。
+- **修法**（`ImTools.kt:44`）：补上完整 schema——`conversationId`/`text` 为必填 string，
+  `quoteMessageId` 用宽松 anyProp（string / number 都能收），`quoteNickname` 为可选 string。
+
+### 3. 构建镜像配置
+
+- `gradle-wrapper.properties` / `settings.gradle.kts` 换成腾讯/阿里镜像（国内网络可直出包），
+  并把 wrapper 网络超时放宽到 60s。源码构建不再需要代理。
+
+---
+
+以下为上游原 README（项目名保留「抖M/DouMCP」，即本项目）：
+
 # 抖M（DouMCP）
 
 抖音 MCP Xposed 模块 —— 注入抖音进程内启动 MCP 服务，让 Claude 等 AI 客户端**直接操控一台真实登录的抖音**。

@@ -1,10 +1,13 @@
 package io.github.yfishyon.doumcp.features.im.tool
 
 import io.github.yfishyon.doumcp.core.addDouMcpTool
+import io.github.yfishyon.doumcp.core.anyProp
 import io.github.yfishyon.doumcp.core.boolArg
 import io.github.yfishyon.doumcp.core.boolArgOrNull
+import io.github.yfishyon.doumcp.core.inputSchema
 import io.github.yfishyon.doumcp.core.intArg
 import io.github.yfishyon.doumcp.core.stringArg
+import io.github.yfishyon.doumcp.core.stringProp
 import io.github.yfishyon.doumcp.core.toolCall
 import io.github.yfishyon.doumcp.features.im.bridge.ImBridge
 import io.github.yfishyon.doumcp.features.im.bridge.ImEmojiBridge
@@ -41,6 +44,17 @@ internal fun Server.registerImTools() {
 
     addDouMcpTool(
         name = "sendTextMessage",
+        schema =
+            inputSchema(
+                properties =
+                    mapOf(
+                        "conversationId" to stringProp(),
+                        "text" to stringProp(),
+                        "quoteMessageId" to anyProp(),
+                        "quoteNickname" to stringProp(),
+                    ),
+                required = listOf("conversationId", "text"),
+            ),
         description =
             "发送文本消息到指定会话（单聊/群聊通用）。参数 conversationId（从 getConversations 取）、" +
                 "text（消息正文）、quoteMessageId（可选，被引用的消息 ID——发引用回复用，对方 UI 显示引用块）、" +

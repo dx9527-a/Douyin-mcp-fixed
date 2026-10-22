@@ -39,7 +39,7 @@ android {
         minSdk = 26
         targetSdk = 37
         versionCode = gitCommitCount
-        versionName = "v1.1.3"
+        versionName = "v1.1.3-fixed.1"
     }
 
     // 按 ABI 分包：arm64-v8a / armeabi-v7a 各出一个 APK

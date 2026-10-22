@@ -439,6 +439,31 @@ object ImMsgBridge {
                 builderClass.methods
                     .first { it.name == "ref_message_type" && it.parameterCount == 1 }
                     .invoke(refBuilder, java.lang.Long.valueOf(MSG_TYPE_TEXT.toLong()))
+                // 宿主 proto 的 required 字段：不设置 build() 会抛 IllegalStateException。
+                // 参数类型是宿主的 MessageStatus（Wire 生成消息类，非 Int），
+                // 通过其无参 Builder 构造默认实例传入。
+                val statusSetter =
+                    builderClass.methods
+                        .firstOrNull { it.name == "referenced_message_status" && it.parameterCount == 1 }
+                if (statusSetter != null) {
+                    val statusParamType = statusSetter.parameterTypes[0]
+                    val statusInstance =
+                        runCatching {
+                            val sbClass = statusParamType.declaredClasses.first { it.simpleName == "Builder" }
+                            val sb = sbClass.getDeclaredConstructor().newInstance()
+                            statusParamType.methods
+                                .first { it.name == "build" && it.parameterCount == 0 }
+                                .invoke(sb)
+                        }.getOrNull()
+                    if (statusInstance != null) {
+                        statusSetter.invoke(refBuilder, statusInstance)
+                    } else {
+                        // 兜底：字段带 ADAPTER/默认实例静态常量时直接用
+                        val fallback =
+                            statusParamType.fields.firstOrNull { it.type == statusParamType && java.lang.reflect.Modifier.isStatic(it.modifiers) }
+                        fallback?.let { statusSetter.invoke(refBuilder, it.get(null)) }
+                    }
+                }
                 referenceInfoToAttach =
                     builderClass.methods
                         .first { it.name == "build" && it.parameterCount == 0 }

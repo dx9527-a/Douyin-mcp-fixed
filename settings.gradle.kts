@@ -1,27 +1,24 @@
 pluginManagement {
     repositories {
-        gradlePluginPortal()
+        maven { url = uri("https://mirrors.cloud.tencent.com/nexus/repository/maven-public/") }
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
+        maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
         google()
         mavenCentral()
+        gradlePluginPortal()
     }
 }
 
 dependencyResolutionManagement {
-    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
+        maven { url = uri("https://mirrors.cloud.tencent.com/nexus/repository/maven-public/") }
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
         google()
         mavenCentral()
-        mavenLocal {
-            content {
-                includeGroup("io.github.libxposed")
-            }
-        }
-    }
-    versionCatalogs {
-        create("libs")
     }
 }
 
-rootProject.name = "DouMCP"
-
+rootProject.name = "doumcp"
 include(":app")
